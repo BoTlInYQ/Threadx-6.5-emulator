@@ -25,7 +25,7 @@ static void producer_entry(ULONG thread_input)
     {
         /* 生产者线程把计数值发送到队列，用于验证 ThreadX queue 和线程调度是否正常。 */
         tx_queue_send(&message_queue, &value, TX_WAIT_FOREVER);
-        printf("[producer] send %lu\n", value);
+        printf("[producer] send %lu\n", (unsigned long)value);
 
         /* 主动让出一段 tick，避免生产者独占执行流，便于观察消费者线程交替运行。 */
         tx_thread_sleep(10);
@@ -43,7 +43,7 @@ static void consumer_entry(ULONG thread_input)
     {
         /* 消费者线程阻塞等待队列消息，模拟 RTOS 应用中的任务间通信。 */
         tx_queue_receive(&message_queue, &value, TX_WAIT_FOREVER);
-        printf("[consumer] receive %lu\n", value);
+        printf("[consumer] receive %lu\n", (unsigned long)value);
         received_count++;
     }
 
@@ -82,8 +82,9 @@ void tx_application_define(void *first_unused_memory)
         0,
         consumer_stack,
         sizeof(consumer_stack),
-        1,
-        1,
+        /* 使用同级优先级，确保生产者发送后先完成日志输出，再通过 sleep 让消费者运行。 */
+        2,
+        2,
         TX_NO_TIME_SLICE,
         TX_AUTO_START);
 }
